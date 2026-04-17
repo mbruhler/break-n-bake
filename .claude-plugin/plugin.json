@@ -8,10 +8,14 @@
   "keywords": ["planning", "refactor", "spec", "milestones", "validation", "multi-agent"],
   "userConfig": {
     "max_fix_iterations": {
+      "title": "Max fix iterations",
+      "type": "number",
       "description": "Maximum fix-agent iterations before hard stop (default: 5, hard stop at 3 no-progress).",
       "sensitive": false
     },
     "break_threshold_files": {
+      "title": "Break threshold (files)",
+      "type": "number",
       "description": "Blast-radius file count above which short prompts auto-trigger break mode (default: 15).",
       "sensitive": false
     }
