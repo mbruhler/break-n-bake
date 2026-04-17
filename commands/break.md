@@ -20,11 +20,11 @@ If both are present, `$ARGUMENTS` wins.
 
 2. **Preserve the prompt.** Write the working prompt verbatim to `.bnb/_PROMPT.md`. Do not edit, trim, or "clean up" — auditability matters.
 
-3. **Spawn Explorer (Haiku).** Use the Agent tool with `subagent_type: "bnb-explorer"`. Pass it the working prompt and tell it to scout. Explorer will write `.bnb/scout-report.json`. Wait for Explorer to finish before continuing.
+3. **Spawn Explorer.** Use the Agent tool with `subagent_type: "bnb-explorer"`. Pass it the working prompt and tell it to scout. Explorer will write `.bnb/scout-report.json`. Wait for Explorer to finish before continuing.
 
 4. **Show the user the scout report summary** (terse — a few lines: blast radius estimate, detected cross-cutting signals, recommendation). If Explorer recommends `mode: "direct"` (task is too small to warrant break), ask the user whether to proceed with break anyway or abort.
 
-5. **Spawn Breaker (Opus).** Use the Agent tool with `subagent_type: "bnb-breaker"`. Pass Breaker a minimal brief: the path `.bnb/_PROMPT.md`, the path `.bnb/scout-report.json`, the path `.bnb/config.json`, and the standing instruction to produce the full `.bnb/` content set per its system prompt. Do not re-explain the structure — Breaker's system prompt already contains it.
+5. **Spawn Breaker.** Use the Agent tool with `subagent_type: "bnb-breaker"`. Pass Breaker a minimal brief: the path `.bnb/_PROMPT.md`, the path `.bnb/scout-report.json`, the path `.bnb/config.json`, and the instruction to produce the full `.bnb/` content set per its system prompt. Do not re-explain the structure.
 
 6. **When Breaker finishes**, read `.bnb/README.md` and `.bnb/questions-before-start.md`. Show the user:
    - A one-line count per directory (e.g., "spec: 9 files, milestones: 5, quality: 3")

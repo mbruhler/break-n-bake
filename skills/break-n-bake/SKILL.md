@@ -4,11 +4,9 @@ description: Detect when a user prompt or a requested change has scope too large
 
 # break-n-bake
 
-You are reading this because the user's request likely has scope too large for a single-shot implementation. This skill guides you into a structured workflow that produces an auditable plan before any code changes, and implements it milestone by milestone with validation checkpoints.
+Route large-scope requests into the break-n-bake workflow.
 
 ## Decide whether to activate
-
-Before suggesting the workflow, run a quick mental check:
 
 **Activate if any of these are true:**
 - The prompt has ≥1500 words, ≥8 numbered requirements, or ≥3 distinct concerns (e.g., "rewrite auth AND add audit logging AND migrate to new DB").
@@ -27,15 +25,15 @@ Before suggesting the workflow, run a quick mental check:
 
 2. **Check initialization.** Look for `.bnb/config.json`. If it doesn't exist, say: "I'll initialize `.bnb/` first — this creates the config and detects your stack." Run `/break-n-bake:init`.
 
-3. **Suggest `/break-n-bake:break`.** Explain what it will do: spawn a cheap scout (Haiku), then a heavy planner (Opus), producing `spec/`, `milestones/`, `quality/` under `.bnb/`. The user reviews before any code is written.
+3. **Suggest `/break-n-bake:break`.** It spawns a scout, then a planner, producing `spec/`, `milestones/`, `quality/` under `.bnb/`. The user reviews before any code is written.
 
-4. **Wait for user confirmation.** Don't invoke `/break-n-bake:break` unilaterally — offer it. The user might have context ("no, just do this one file") that overrides the signal.
+4. **Wait for user confirmation.** Do not invoke `/break-n-bake:break` unilaterally.
 
 ## What not to do
 
-- Never run `/break-n-bake:bake` without a prior `/break-n-bake:break` step producing `milestones/`. There's nothing to bake without a plan.
-- Never edit source code during this skill's activation — your job here is routing, not implementation.
-- Never auto-approve big changes. Even if you're confident, the checkpoint at end of `/break` is there so the user can steer.
+- Never run `/break-n-bake:bake` without a prior `/break-n-bake:break` producing `milestones/`.
+- Never edit source code during this skill's activation. Route, don't implement.
+- Never auto-approve without the user reviewing `.bnb/` first.
 
 ## Commands at a glance
 
@@ -46,8 +44,4 @@ Before suggesting the workflow, run a quick mental check:
 | `/break-n-bake:bake` | After the user has read `.bnb/spec/` and answered `questions-before-start.md`. |
 | `/break-n-bake:fix` | Manual retry of fix cycle against validation failures. |
 
-## Philosophy
-
-The workflow's core bet: **the cost of stopping to plan is almost always lower than the cost of losing the plot halfway through a large change.** Breakmode produces files the model (and the user) can return to whenever a milestone gets fuzzy. Bakemode implements one checkpoint at a time, so mistakes compound across a day of work instead of across a week.
-
-If unsure whether to activate — err toward suggesting it for the user to decide. The user can always say "no, skip break, just implement."
+If unsure whether to activate, offer it and let the user decide.

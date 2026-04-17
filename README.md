@@ -17,7 +17,7 @@ Two phases, five specialized sub-agents, one source of truth on disk (`.bnb/`).
 
 ### Phase 1 — `break`
 
-Explorer (Haiku) scouts the prompt and the repo. Breaker (Opus) turns the mess into a four-layer structure:
+Explorer scouts the prompt and the repo. Breaker turns the output into a four-layer structure:
 
 ```
 .bnb/
@@ -37,12 +37,12 @@ Every file repeats one rule at the top: **if unsure, ask — don't guess.**
 
 ### Phase 2 — `bake`
 
-Baker (Sonnet, or Opus for high-risk milestones flagged by Breaker) implements one milestone at a time. After each milestone:
+Baker implements one milestone at a time. After each milestone:
 
-- Validator (Haiku, **read-only** — no Write/Edit tools) runs `test + lint + typecheck`, classifies errors by severity, writes structured reports to `.bnb/validation-results/`.
-- If **blocker** errors → halt main thread, run Fixer (Opus). Fixer **cannot touch test or config files** (enforced by hooks + snapshot verification).
-- If only **deferrable** errors → continue to next milestone, accumulate for end-of-run fix pass.
-- Fix cycle has a **hard stop at 3 no-progress iterations** — if error set doesn't shrink, Claude asks you.
+- Validator (read-only, no Write/Edit tools) runs `test + lint + typecheck`, classifies errors by severity, writes structured reports to `.bnb/validation-results/`.
+- On **blocker** errors: halt main thread, run Fixer. Fixer cannot touch test or config files.
+- On **deferrable** errors only: continue to next milestone, accumulate for end-of-run fix pass.
+- Fix cycle hard-stops at 3 no-progress iterations.
 
 ## Commands
 
@@ -59,13 +59,11 @@ Skill `break-n-bake` auto-triggers on long prompts or refactor-keyword signals �
 
 | Agent | Model | Tools | Role |
 |---|---|---|---|
-| `bnb-explorer` | Sonnet 4.6 (medium effort) | Read, Grep, Glob, Bash | Prompt + repo reconnaissance. Minimum floor is Sonnet because the `break vs direct` recommendation is a load-bearing judgment. |
-| `bnb-breaker` | Opus | Read, Write, Edit, Grep, Glob, Bash | Heaviest cognitive load: pattern extraction, hierarchy, cross-refs. |
-| `bnb-baker` | Sonnet | Read, Write, Edit, Grep, Glob, Bash | Implementation (Opus for milestones Breaker flagged `risk: high`). |
-| `bnb-validator` | Sonnet 4.6 (medium effort) | Read, Bash, Grep — **no Write, no Edit** | Runs validation, classifies by severity with spec context, prioritizes. Physically cannot modify code. |
-| `bnb-fixer` | Opus | Read, Write, Edit, Grep, Bash | Fixes blockers. Blocked from test/config paths via hooks + snapshot verify. |
-
-**Design note on the Sonnet floor:** Haiku is tempting for Explorer/Validator but the two decisions these agents make — "should we break at all?" and "is this failure a blocker or deferrable?" — are judgment calls that read spec and imports. Sonnet 4.6 with medium thinking effort is the minimum that does this reliably. Opus is reserved for the heaviest steps (Breaker's partitioning, Fixer's root-cause work).
+| `bnb-explorer` | Sonnet 4.6, medium effort | Read, Grep, Glob, Bash | Prompt + repo reconnaissance. |
+| `bnb-breaker` | Opus | Read, Write, Edit, Grep, Glob, Bash | Produces `spec/`, `milestones/`, `quality/`. |
+| `bnb-baker` | Sonnet | Read, Write, Edit, Grep, Glob, Bash | Implements one milestone per invocation. Opus when milestone is `risk: high`. |
+| `bnb-validator` | Sonnet 4.6, medium effort | Read, Bash, Grep — **no Write, no Edit** | Runs validation, classifies severity. |
+| `bnb-fixer` | Opus | Read, Write, Edit, Grep, Bash | Fixes blockers. Blocked from test/config paths. |
 
 ## Hard rules enforced mechanically
 
@@ -112,12 +110,6 @@ Set via `/plugin config break-n-bake` or at install time:
 | `max_fix_iterations` | `5` | Cap on fix-cycle retries. |
 | `break_threshold_files` | `15` | Blast-radius file count that triggers auto-break suggestion. |
 
-## Philosophy
+## Core rule
 
-> Don't delegate understanding. Don't guess. When a decision isn't in the spec — stop and ask.
-
-Adapted from the `tam-agent/` pattern (the reference implementation that seeded this plugin).
-
-## Status
-
-v0.1.0 — MVP. JS/TS stack has the most polished validation path; Python, Rust, Go are auto-detected but command inference is best-effort.
+> If unsure, ask. Don't guess. When a decision isn't in the spec, stop.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-04-17 — trim prose from prompts
+
+Removed rationale, philosophy, and self-referential commentary from agent system prompts, command files, the orchestrator skill, and the README. Only rules and procedures remain. No functional change.
+
 ## 0.2.0 — 2026-04-17 — raise minimum model to Sonnet 4.6
 
 ### Changed
