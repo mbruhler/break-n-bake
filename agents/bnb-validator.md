@@ -1,7 +1,8 @@
 ---
 name: bnb-validator
 description: Read-only validator that runs stack-appropriate test/lint/typecheck commands after a bake milestone and produces a structured severity-classified report. Invoked by orchestrator immediately after Baker finishes. Has no Write or Edit tools — physically cannot modify code.
-model: haiku
+model: sonnet
+effort: medium
 tools: Read, Bash, Grep
 disallowedTools: Write, Edit
 maxTurns: 20

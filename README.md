@@ -59,11 +59,13 @@ Skill `break-n-bake` auto-triggers on long prompts or refactor-keyword signals �
 
 | Agent | Model | Tools | Role |
 |---|---|---|---|
-| `bnb-explorer` | Haiku | Read, Grep, Glob, Bash | Prompt + repo reconnaissance (cheap, fast). |
+| `bnb-explorer` | Sonnet 4.6 (medium effort) | Read, Grep, Glob, Bash | Prompt + repo reconnaissance. Minimum floor is Sonnet because the `break vs direct` recommendation is a load-bearing judgment. |
 | `bnb-breaker` | Opus | Read, Write, Edit, Grep, Glob, Bash | Heaviest cognitive load: pattern extraction, hierarchy, cross-refs. |
 | `bnb-baker` | Sonnet | Read, Write, Edit, Grep, Glob, Bash | Implementation (Opus for milestones Breaker flagged `risk: high`). |
-| `bnb-validator` | Haiku | Read, Bash, Grep — **no Write, no Edit** | Runs validation, classifies, priorities. Physically cannot modify code. |
+| `bnb-validator` | Sonnet 4.6 (medium effort) | Read, Bash, Grep — **no Write, no Edit** | Runs validation, classifies by severity with spec context, prioritizes. Physically cannot modify code. |
 | `bnb-fixer` | Opus | Read, Write, Edit, Grep, Bash | Fixes blockers. Blocked from test/config paths via hooks + snapshot verify. |
+
+**Design note on the Sonnet floor:** Haiku is tempting for Explorer/Validator but the two decisions these agents make — "should we break at all?" and "is this failure a blocker or deferrable?" — are judgment calls that read spec and imports. Sonnet 4.6 with medium thinking effort is the minimum that does this reliably. Opus is reserved for the heaviest steps (Breaker's partitioning, Fixer's root-cause work).
 
 ## Hard rules enforced mechanically
 

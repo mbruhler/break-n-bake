@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0 — 2026-04-17 — raise minimum model to Sonnet 4.6
+
+### Changed
+- **`bnb-explorer`**: `model: haiku` → `model: sonnet` with `effort: medium`. Scout's `break vs direct` recommendation is load-bearing — a Haiku miss here skips the whole structured workflow. Sonnet with medium thinking reads the prompt and repo well enough to make the judgment reliably.
+- **`bnb-validator`**: `model: haiku` → `model: sonnet` with `effort: medium`. Severity classification (blocker vs deferrable) requires reading spec and import graph to judge whether a failing test breaks a contract or just an edge case. Haiku guessed; Sonnet actually reads.
+
+### Rationale
+Haiku was tempting for cost but both affected agents make judgment calls, not lookups. The cost of one falsely-`clean` milestone that propagates into M+2 is larger than the marginal spend of running Sonnet on reconnaissance and classification.
+
+### Unchanged
+- `bnb-breaker` stays Opus (partitioning and cross-refs are the heaviest cognitive step).
+- `bnb-baker` stays Sonnet default, Opus for `risk: high` milestones.
+- `bnb-fixer` stays Opus (root-cause work on blockers).
+
 ## 0.1.0 — 2026-04-17 — initial release
 
 First public version. MVP scope.
