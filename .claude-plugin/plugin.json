@@ -1,0 +1,19 @@
+{
+  "name": "break-n-bake",
+  "version": "0.1.0",
+  "description": "Split overwhelming prompts and large refactors into a structured spec (break), then implement milestone-by-milestone with validation and auto-fix (bake).",
+  "author": {
+    "name": "Michal Broler"
+  },
+  "keywords": ["planning", "refactor", "spec", "milestones", "validation", "multi-agent"],
+  "userConfig": {
+    "max_fix_iterations": {
+      "description": "Maximum fix-agent iterations before hard stop (default: 5, hard stop at 3 no-progress).",
+      "sensitive": false
+    },
+    "break_threshold_files": {
+      "description": "Blast-radius file count above which short prompts auto-trigger break mode (default: 15).",
+      "sensitive": false
+    }
+  }
+}

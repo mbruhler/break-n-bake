@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "bnb-fixer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/fixer-lock-on.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "bnb-fixer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/fixer-lock-off.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/guard-fixer-paths.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
