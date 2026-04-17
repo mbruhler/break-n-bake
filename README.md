@@ -73,12 +73,20 @@ Skill `break-n-bake` auto-triggers on long prompts or refactor-keyword signals â
 
 ## Installation
 
-```bash
-# From this directory, during development:
+Three ways, in order of convenience:
+
+```shell
+# 1. Via marketplace (recommended)
+/plugin marketplace add mbruhler/break-n-bake
+/plugin install break-n-bake@mbruhler-plugins
+
+# 2. Clone + --plugin-dir (useful for development)
+git clone https://github.com/mbruhler/break-n-bake
 claude --plugin-dir ./break-n-bake
 
-# From a marketplace (once published):
-/plugin install break-n-bake@<marketplace>
+# 3. CLI equivalent of the marketplace flow
+claude plugin marketplace add mbruhler/break-n-bake
+claude plugin install break-n-bake@mbruhler-plugins
 ```
 
 ## Workflow

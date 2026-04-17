@@ -1,0 +1,41 @@
+{
+  "name": "mbruhler-plugins",
+  "owner": {
+    "name": "Michal Broler",
+    "email": "michalbroler@gmail.com"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by Michal Broler",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "break-n-bake",
+      "source": "./",
+      "description": "Split overwhelming prompts and large refactors into structured spec (break), then implement milestone-by-milestone with validation and bounded auto-fix (bake).",
+      "version": "0.1.0",
+      "author": {
+        "name": "Michal Broler"
+      },
+      "homepage": "https://github.com/mbruhler/break-n-bake",
+      "repository": "https://github.com/mbruhler/break-n-bake",
+      "license": "MIT",
+      "keywords": [
+        "planning",
+        "refactor",
+        "spec",
+        "milestones",
+        "validation",
+        "multi-agent"
+      ],
+      "category": "developer-tools",
+      "tags": [
+        "break-n-bake",
+        "spec-driven",
+        "refactoring",
+        "multi-agent",
+        "validation"
+      ]
+    }
+  ]
+}
