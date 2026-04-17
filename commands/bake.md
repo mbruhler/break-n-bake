@@ -9,10 +9,12 @@ Execute implementation phase.
 ## Argument parsing
 
 `$ARGUMENTS` interpretation:
-- **Empty** → bake the next `pending` milestone in `.bnb/milestones/STATUS.md`.
-- **`M<n>`** (e.g., `M3`) → bake that specific milestone.
-- **`--all`** → bake every remaining milestone sequentially, stopping for a user "OK, next?" checkpoint between each.
+- **Empty** → bake the next `pending` milestone in `.bnb/milestones/STATUS.md`, then **STOP**. Do not continue to the next milestone. Exiting after one milestone is the correct and expected behavior — the user must re-invoke `/break-n-bake:bake` (or pass `--all`) to proceed.
+- **`M<n>`** (e.g., `M3`) → bake that specific milestone, then **STOP**. Same single-milestone rule as empty.
+- **`--all`** → bake every remaining milestone sequentially, stopping for a user "OK, next?" checkpoint between each. This is the ONLY mode in which multiple milestones may run in one invocation.
 - **`--no-auto-fix`** combined with any of the above → do not run the fix cycle automatically; just report Validator's results and stop.
+
+**CRITICAL — Default (no args) is single-milestone.** If `--all` was not explicitly passed in `$ARGUMENTS`, you MUST halt after the first milestone finishes (whether `clean`, `deferrable-only`, `blocked`, or escalated). Do not ask "OK, next?". Do not auto-continue. Print the report and end the command.
 
 ## Preconditions
 
@@ -39,35 +41,43 @@ Spawn Baker (`subagent_type: "bnb-baker"`). Pass it the milestone identifier. If
 
 Wait for Baker to finish. Baker will write `.bnb/milestones/M{n}.bake-summary.md`.
 
-### Step 2 — Snapshot lock
+### Step 2 — Post-bake summary
+
+**CRITICAL — before running any script or spawning Validator**, read `.bnb/milestones/M{n}.bake-summary.md` (written by Baker) and output a short summary to the user:
+- A bullet list of the key changes Baker made (files added/modified, behaviour introduced).
+- Any notable decisions or deviations Baker flagged.
+
+Keep it concise (≤10 bullets). This gives the user a chance to spot obvious mistakes before validation runs.
+
+### Step 3 — Snapshot lock
 
 Run `${CLAUDE_PLUGIN_ROOT}/scripts/snapshot-lock.sh` — this records SHA256 hashes of all test/config files so we can verify Fixer didn't touch them later.
 
-### Step 3 — Validator
+### Step 4 — Validator
 
 Spawn Validator (`subagent_type: "bnb-validator"`) **with `run_in_background: true`**. Validator writes `.bnb/validation-results/M{n}-run-1.json` and `.bnb/validation-results/M{n}-run-1.summary.md`. You may continue other orchestration while Validator runs, but you must await its result before deciding next steps.
 
 Read the summary when Validator finishes.
 
-### Step 4 — Branch on verdict
+### Step 5 — Branch on verdict
 
 **CRITICAL — read Validator's `summary.md` verdict field verbatim. Do not infer. Do not re-classify.** The verdict is one of: `clean`, `deferrable-only`, `blocked`. Anything else → stop and surface the artifact path to the user.
 
 **Verdict = `clean`:**
 - Mark `M{n}: done` in `.bnb/milestones/STATUS.md`.
 - Git commit using the format from `.bnb/milestones/README.md`.
-- If `--all`, ask "OK, next?" and **CRITICAL** — wait for explicit user confirmation before proceeding to M{n+1}. Else stop.
+- If `--all` was explicitly passed, proceed automatically to M{n+1} (no user gate). If a speculative Baker for M{n+1} was already spawned in parallel during Step 4, resume with its bake-summary. **Otherwise (default / `M<n>` mode) STOP** — do not continue to the next milestone, do not prompt the user to continue. The command ends here.
 
 **Verdict = `deferrable-only`:**
 - Mark `M{n}: done-with-deferrables` in STATUS.md.
 - Append the deferrable IDs to `.bnb/validation-results/deferrables-accumulated.json`.
-- Commit. Proceed as above (same "OK, next?" gate in `--all`).
+- Commit. Proceed as above (automatic in `--all`; stop otherwise).
 
 **Verdict = `blocked`:**
 - **CRITICAL — If `--no-auto-fix` was passed, stop here.** Print blocker summary and JSON artifact path. Tell the user to run `/break-n-bake:fix`. Do NOT enter the fix cycle.
 - Else, enter fix cycle (next section).
 
-### Step 5 — Fix cycle (bounded)
+### Step 6 — Fix cycle (bounded)
 
 <hard_rules name="fix-cycle-invariants">
 - **CRITICAL — `max_fix_iterations` = user config (default 5).** Never exceed.
@@ -87,7 +97,7 @@ Loop, iteration `c` starting at 1:
 7. If iteration count reaches `max_fix_iterations` → stop loop, same escalation as no-progress.
 8. Else, continue loop with `c = c+1`.
 
-### Step 6 — Report
+### Step 7 — Report
 
 After the loop exits (success or escalation), print the report using the format below.
 
@@ -108,7 +118,27 @@ CRITICAL: every line is mandatory. Do not omit artifact pointers even when empty
 
 ## `--all` flow
 
-Run single-milestone flow for each `pending` milestone in STATUS.md order. Between milestones, ask "OK, next?" and wait for user confirmation. Never run the next milestone without explicit OK.
+`--all` is **automatic** — no "OK, next?" gate between milestones. Run the single-milestone flow for each `pending` milestone in STATUS.md order, chaining automatically on `clean` / `deferrable-only` verdicts.
+
+### Parallel speculative bake (only in `--all`)
+
+Because Validator runs in the background (Step 4), you do not have to idle while it runs. As soon as Validator for M{n} is spawned with `run_in_background: true`:
+
+1. **Speculatively spawn Baker for M{n+1}** in parallel, provided M{n+1} exists and is `pending` in STATUS.md.
+2. Continue to wait for Validator M{n}'s result.
+3. When Validator M{n} finishes:
+   - **Verdict `clean` / `deferrable-only`** → commit M{n}, then wait for speculative Baker M{n+1} to finish (if still running), run its bake-summary step, snapshot-lock, and spawn Validator M{n+1} (again in background). Repeat.
+   - **Verdict `blocked`** → the speculative M{n+1} bake is now **invalid** because the fix cycle on M{n} will change the baseline. **CRITICAL — abort/discard the speculative M{n+1} work**: if Baker M{n+1} already produced file changes, `git checkout -- .` / reset those paths (only the ones Baker M{n+1} touched, identifiable from its bake-summary). Then enter M{n}'s fix cycle as normal. After M{n} is resolved, re-bake M{n+1} from a clean baseline.
+
+### Hard rules for parallel bake
+
+<hard_rules name="parallel-bake">
+- **CRITICAL — Only in `--all` mode.** Single-milestone invocations (empty args, `M<n>`) never speculatively bake the next milestone.
+- **CRITICAL — Never commit M{n+1} before M{n} is confirmed `clean` or `deferrable-only`.** Commits must be sequential and gated on the prior milestone's verdict.
+- **CRITICAL — On `blocked` verdict for M{n}, discard speculative M{n+1} changes before entering fix cycle.** The fix cycle must operate on a clean baseline matching M{n}'s post-Baker state.
+- **CRITICAL — Never speculatively bake more than one milestone ahead.** At most one speculative Baker may be in flight at any time.
+- Do not speculatively bake across `risk: high` boundaries — if M{n+1} is tagged `risk: high`, wait for M{n}'s verdict before spawning Baker M{n+1}.
+</hard_rules>
 
 ## End-of-run fix pass
 
@@ -119,7 +149,7 @@ After the last milestone (or any time `--all` completes or is stopped mid-way), 
 <hard_rules>
 - **CRITICAL — Never modify `.bnb/spec/`, `.bnb/quality/`, or `.bnb/milestones/M*-*.md` from this command.** Those are contracts.
 - **CRITICAL — Never skip `snapshot-verify.sh`.** Fixer escapes are the primary integrity risk.
-- **CRITICAL — Never run the next milestone without explicit user OK** when in `--all` mode. "OK, next?" requires a literal user reply.
+- **CRITICAL — `--all` is automatic: no user gate between milestones.** But parallel speculative bake may never commit M{n+1} before M{n}'s verdict is `clean` / `deferrable-only`, and must discard M{n+1} changes on a `blocked` verdict for M{n}.
 - **CRITICAL — Never re-classify Validator's verdict.** Read the `verdict` field verbatim from `summary.md`.
 - **CRITICAL — Never auto-enter the fix cycle when `--no-auto-fix` was passed.**
 - **IMPORTANT — Never force-push, never amend** commits produced here.
@@ -131,7 +161,7 @@ After the last milestone (or any time `--all` completes or is stopped mid-way), 
 CRITICAL — before declaring the command done, verify:
 1. For every milestone touched, `STATUS.md` reflects the outcome (`done`, `done-with-deferrables`, `blocked`, or unchanged if halted).
 2. Every fix cycle executed ran `snapshot-verify.sh` — none were skipped.
-3. In `--all` mode, every milestone transition past the first was preceded by a literal user "OK, next?" confirmation.
+3. In `--all` mode, milestone transitions were automatic; any speculative M{n+1} bake was committed only after M{n}'s verdict was `clean` / `deferrable-only`, and discarded on `blocked`.
 4. If `--no-auto-fix` was set, the fix cycle was NOT invoked on any `blocked` verdict.
 5. The final report uses the `<output_format name="bake-report">` structure, no fields omitted.
 
