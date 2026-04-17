@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 # Initialize .bnb/ skeleton in the current project.
-# Idempotent on missing directories; refuses to overwrite existing content.
+#
+# Project-level only: writes config.json, README, updates .gitignore, injects
+# a break-n-bake block into the project CLAUDE.md, and seeds the project-root
+# eslint.config.bnb.mjs overlay. Per-run scaffolding is created separately by
+# init-run.sh when /break-n-bake:break starts a new run.
+#
+# Runs live at `.bnb/<slug>/` (no `runs/` parent). See scripts/slugify.sh for
+# the reserved-slug denylist.
+#
+# Idempotent on missing directories; refuses to overwrite existing config.
 
 set -euo pipefail
 
@@ -15,13 +24,7 @@ if [ -f "$BNB/config.json" ]; then
   exit 0
 fi
 
-mkdir -p \
-  "$BNB/spec" \
-  "$BNB/milestones" \
-  "$BNB/quality" \
-  "$BNB/validation-results/raw" \
-  "$BNB/validation-results/fix-cycles" \
-  "$BNB/.snapshots"
+mkdir -p "$BNB"
 
 STACK_JSON=$("$PLUGIN_ROOT/scripts/detect-stack.sh" "$PROJECT_ROOT")
 
@@ -30,7 +33,7 @@ BREAK_THRESH="${CLAUDE_PLUGIN_OPTION_BREAK_THRESHOLD_FILES:-15}"
 
 cat > "$BNB/config.json" <<EOF
 {
-  "version": "0.1.0",
+  "version": "0.5.0",
   "detected": $STACK_JSON,
   "settings": {
     "max_fix_iterations": $MAX_FIX,
@@ -44,14 +47,16 @@ cat > "$BNB/config.json" <<EOF
     "**/tests/**",
     ".eslintrc*",
     "eslint.config.*",
+    "eslint.config.bnb.mjs",
     "tsconfig*.json",
     "jsconfig.json",
     "vitest.config.*",
     "jest.config.*",
     "playwright.config.*",
-    ".bnb/spec/**",
-    ".bnb/quality/**",
-    ".bnb/milestones/M*-*.md"
+    ".bnb/*/spec/**",
+    ".bnb/*/quality/**",
+    ".bnb/*/milestones/M*-*.md",
+    ".bnb/*/validation/**"
   ]
 }
 EOF
@@ -61,34 +66,43 @@ cat > "$BNB/README.md" <<'EOF'
 
 > If unsure — ask, don't guess.
 
-This directory is produced by the `break-n-bake` Claude Code plugin. It contains the plan, the validation trail, and the fix-cycle history for non-trivial work in this project.
+This directory is produced by the `break-n-bake` Claude Code plugin. It holds
+project-level config plus one sub-directory per run, addressed directly by slug
+(no `runs/` parent).
 
-## Layout (populated by `/break-n-bake:break`)
+## Layout
 
-- `_PROMPT.md` — original prompt, preserved verbatim.
-- `scout-report.json` — Explorer's reconnaissance output.
-- `questions-before-start.md` — clarifications to answer before implementation.
-- `spec/` — what we're building (numbered docs).
-- `milestones/` — how we build it (M1…M{n} + STATUS + README).
-- `quality/` — acceptance scenarios, landmines, out-of-scope.
-- `validation-results/` — Validator reports and fix-cycle trail (mostly gitignored).
-- `.snapshots/` — integrity hashes (gitignored).
+- `config.json` — detected stack, validation commands, forbidden-write patterns. Project-wide; survives across runs.
+- `CURRENT_RUN` — plain-text pointer to the active run slug (written by `/break-n-bake:break`, read by every other command).
+- `<slug>/` — one directory per `/break-n-bake:break` invocation. Contains `_PROMPT.md`, `spec/`, `milestones/`, `quality/`, `validation/`, `validation-results/`, `.snapshots/`, etc.
 
 ## Workflow
 
-1. `/break-n-bake:break` — scout + plan.
-2. Answer `questions-before-start.md`.
-3. `/break-n-bake:bake` — implement next milestone.
-4. Repeat 3 until `STATUS.md` is all `done`.
+1. `/break-n-bake:init` — one time per project.
+2. `/break-n-bake:break` — starts a new run under `<slug>/` and sets `CURRENT_RUN`.
+3. Answer `<slug>/questions-before-start.md`.
+4. `/break-n-bake:bake` — implements the next milestone of the active run.
+5. Repeat 4 until `<slug>/milestones/STATUS.md` is all `done`.
 
-If nothing is here yet, run `/break-n-bake:break` with your working prompt.
+## Run selection
+
+The active run is resolved in this order: `$BNB_RUN_DIR` env var → `$BNB_RUN`
+slug env var → contents of `.bnb/CURRENT_RUN`. To switch runs, either
+`echo <slug> > .bnb/CURRENT_RUN` or set `BNB_RUN=<slug>` for one invocation.
+
+## Immutable validation layer
+
+Each run's `validation/` directory (with `eslint/`, `tests/`, `prompts/`) is
+append-only after the Breaker seeds it: new numbered files may be added by the
+Baker, but existing files are snapshot-locked and cannot be edited or deleted.
+See `<slug>/validation/README.md` for details.
 EOF
 
 GITIGNORE="$PROJECT_ROOT/.gitignore"
 GITIGNORE_LINES=(
-  ".bnb/validation-results/raw/"
-  ".bnb/.snapshots/"
-  ".bnb/.active-agent"
+  ".bnb/*/validation-results/raw/"
+  ".bnb/*/.snapshots/"
+  ".bnb/*/.active-agent"
 )
 if [ -f "$GITIGNORE" ]; then
   for line in "${GITIGNORE_LINES[@]}"; do
@@ -97,6 +111,13 @@ if [ -f "$GITIGNORE" ]; then
 else
   printf '%s\n' "${GITIGNORE_LINES[@]}" > "$GITIGNORE"
 fi
+
+# Inject break-n-bake block into project CLAUDE.md (idempotent; only content
+# between BEGIN/END markers is managed).
+"$PLUGIN_ROOT/scripts/inject-claude-md.sh" "$PROJECT_ROOT" || true
+
+# Seed the project-root eslint overlay (no-op when regenerated later per run).
+"$PLUGIN_ROOT/scripts/regen-eslint-overlay.sh" "$PROJECT_ROOT" || true
 
 echo "break-n-bake initialized at $BNB"
 echo

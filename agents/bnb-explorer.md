@@ -14,11 +14,12 @@ Gather facts about the prompt and the repository. Write one report. Do not plan 
 Orchestrator gives you:
 - The **user prompt** (could be 3 lines or 3000 words)
 - The **repository root** (your cwd)
+- The **active run dir** path, e.g. `.bnb/<slug>/`. All writes go there.
 - Optional hints: known stack, known touch points
 
 ## What you produce
 
-A single structured report written to `.bnb/scout-report.json`. Schema:
+A single structured report written to `<run-dir>/scout-report.json` (e.g. `.bnb/<slug>/scout-report.json`). Schema:
 
 ```json
 {
@@ -91,7 +92,7 @@ For each path or identifier the user mentioned:
 ## Hard rules
 
 <hard_rules>
-- **CRITICAL — Read-only.** Never write outside `.bnb/scout-report.json`. Never edit source.
+- **CRITICAL — Read-only.** Never write outside `<run-dir>/scout-report.json` (the active run dir the orchestrator hands you). Never edit source or touch other runs.
 - **CRITICAL — Never fabricate numbers.** Use `null` when unknown. Err upward on estimates, never invent precision.
 - **IMPORTANT — No implementation suggestions.** Report states facts and a mode, not a plan.
 - **IMPORTANT — Time-box.** If reconnaissance takes more than ~10 tool calls, stop and mark `incomplete: true` on relevant sections.

@@ -9,6 +9,7 @@
 
 set -uo pipefail
 
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 MILESTONE="${1:-}"
 PREV="${2:-}"
 CURR="${3:-}"
@@ -18,8 +19,13 @@ if [ -z "$MILESTONE" ] || [ -z "$PREV" ] || [ -z "$CURR" ]; then
   exit 1
 fi
 
-PROJECT_ROOT="$(pwd)"
-BNB="$PROJECT_ROOT/.bnb/validation-results"
+RUN_DIR=$("$PLUGIN_ROOT/scripts/resolve-run.sh" 2>/dev/null || true)
+if [ -z "$RUN_DIR" ]; then
+  echo "error: no active run resolved" >&2
+  exit 1
+fi
+
+BNB="$RUN_DIR/validation-results"
 PREV_JSON="$BNB/${MILESTONE}-${PREV}.json"
 CURR_JSON="$BNB/${MILESTONE}-${CURR}.json"
 

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Record SHA256 hashes of all files matching forbidden_write_patterns in .bnb/config.json.
-# Output: .bnb/.snapshots/forbidden-{timestamp}.lock  and  .bnb/.snapshots/latest.lock (symlink)
+# Output: <run-dir>/.snapshots/forbidden-{timestamp}.lock  and  <run-dir>/.snapshots/latest.lock (symlink)
 #
 # This is the primary mechanical guarantee that Fixer didn't touch contract files.
+# The validation/ layer has its own companion lock (validation.lock) written by
+# validation-lock.sh; both are verified together by snapshot-verify.sh.
 
 set -euo pipefail
 
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 PROJECT_ROOT="$(pwd)"
 BNB="$PROJECT_ROOT/.bnb"
 CONFIG="$BNB/config.json"
@@ -15,12 +18,18 @@ if [ ! -f "$CONFIG" ]; then
   exit 1
 fi
 
+RUN_DIR=$("$PLUGIN_ROOT/scripts/resolve-run.sh" 2>/dev/null || true)
+if [ -z "$RUN_DIR" ]; then
+  echo "error: no active run. Set BNB_RUN, BNB_RUN_DIR, or .bnb/CURRENT_RUN." >&2
+  exit 1
+fi
+
 PATTERNS=$(node -e "const c=require('$CONFIG'); console.log((c.forbidden_write_patterns||[]).join('\n'))" 2>/dev/null || \
   python3 -c "import json; print('\n'.join(json.load(open('$CONFIG')).get('forbidden_write_patterns', [])))")
 
 TS=$(date -u +%Y%m%dT%H%M%SZ)
-OUT="$BNB/.snapshots/forbidden-$TS.lock"
-mkdir -p "$BNB/.snapshots"
+OUT="$RUN_DIR/.snapshots/forbidden-$TS.lock"
+mkdir -p "$RUN_DIR/.snapshots"
 
 cd "$PROJECT_ROOT"
 
@@ -42,6 +51,6 @@ done <<< "$PATTERNS" | sort -u | while IFS= read -r f; do
   echo "$hash  $f" >> "$OUT"
 done
 
-ln -sf "$(basename "$OUT")" "$BNB/.snapshots/latest.lock"
+ln -sf "$(basename "$OUT")" "$RUN_DIR/.snapshots/latest.lock"
 
 echo "snapshot locked: $OUT ($(wc -l < "$OUT" | tr -d ' ') files tracked)"
