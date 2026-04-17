@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.0 — 2026-04-17 — prompt adherence layer
+
+Applied four prompting techniques from the instruction-following literature across every prompt in the plugin (5 agents, 4 commands, 1 skill):
+
+### Added
+- **Rereading + recap gates** (Xu et al. 2023): every agent and command outputs a short numeric recap before any write/edit/agent-spawn. Forces read-in-full and confirms arguments parsed correctly instead of skimming.
+- **`<output_format>` blocks** with exact templates: `bake-summary` (Baker), `bake-report` (/bake), `break-report` (/break), `fix-report` (/fix), `init-report` (/init), `activation-message` (skill). Evidence field is mandatory — deliverables without evidence are not done.
+- **`<hard_rules>` XML blocks**: rule lists separated from prose prompts (Anthropic best-practice tag separation), making rules more recall-stable mid-conversation.
+- **End-of-prompt `<reminder>` blocks** (Liu et al. 2023 "Lost in the Middle" mitigation): 3–5 point verification checklists repeated at end of each file, addressing critical rules that would otherwise only appear mid-prompt.
+- **`CRITICAL` / `IMPORTANT` markers**: `CRITICAL` on rules whose violation corrupts the contract (snapshot-verify, `--no-auto-fix` gate, `_PROMPT.md` verbatim, one-milestone-per-invocation, no edits to spec/quality); `IMPORTANT` on rules whose violation is costly but recoverable (style, surgical diffs, strict lint).
+
+### Scope
+Files touched: `skills/break-n-bake/SKILL.md`, `agents/bnb-{explorer,breaker,baker,validator,fixer}.md`, `commands/{init,break,bake,fix}.md`. No runtime or script changes.
+
+### Rationale
+Previous versions had rules; they were being ignored mid-flow. The symptoms: Baker drifting into M+1 without OK, verdicts silently re-classified, `> Ask user if...` lines decided unilaterally, forbidden-path edits. Root cause was prompt shape, not missing rules. Four techniques, one layer, no prose bloat.
+
 ## 0.2.1 — 2026-04-17 — trim prose from prompts
 
 Removed rationale, philosophy, and self-referential commentary from agent system prompts, command files, the orchestrator skill, and the README. Only rules and procedures remain. No functional change.

@@ -52,6 +52,10 @@ A single structured report written to `.bnb/scout-report.json`. Schema:
 
 ## How to scout
 
+### 0. Recap before scouting
+
+**CRITICAL** — output one line: `Scouting prompt ~N words, repo cwd=<path>, mode=reconnaissance-only.` Confirms you will not plan or implement.
+
 ### 1. Prompt analysis (pure text work)
 
 - Count words, numbered items, distinct verbs/nouns representing concerns.
@@ -86,7 +90,18 @@ For each path or identifier the user mentioned:
 
 ## Hard rules
 
-- **Read-only.** Never write outside `.bnb/scout-report.json`. Never edit source.
-- **No implementation suggestions.** Report states facts and a mode, not a plan.
-- **Time-box.** If reconnaissance takes more than ~10 tool calls, stop and mark `incomplete: true` on relevant sections.
-- **Never fabricate numbers.** Use `null` when unknown.
+<hard_rules>
+- **CRITICAL — Read-only.** Never write outside `.bnb/scout-report.json`. Never edit source.
+- **CRITICAL — Never fabricate numbers.** Use `null` when unknown. Err upward on estimates, never invent precision.
+- **IMPORTANT — No implementation suggestions.** Report states facts and a mode, not a plan.
+- **IMPORTANT — Time-box.** If reconnaissance takes more than ~10 tool calls, stop and mark `incomplete: true` on relevant sections.
+</hard_rules>
+
+## Reminder before you signal
+
+<reminder>
+CRITICAL — before writing the final JSON:
+1. Every number is either measured or `null` — no guesses inline.
+2. `recommendation.reasoning` cites a specific signal with a number (e.g., "42 files reference X"), not a vibe.
+3. No plan content leaked into the report — facts and mode only, no implementation suggestions.
+</reminder>

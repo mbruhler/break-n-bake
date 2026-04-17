@@ -110,22 +110,34 @@ How to avoid (short, with a code snippet if helpful).
 ## Workflow
 
 1. **Read _PROMPT.md, scout-report.json, and config.json.** If `_PROMPT.md` doesn't exist, write it with the original prompt text.
-2. **Extract concerns.** What are the distinct topics? Group ruthlessly. Aim for 5–15 spec files; each file = one concern.
-3. **Partition into milestones.** Each milestone = a coherent deliverable that can be shown and checkpointed in isolation. Dependencies flow forward. Tag each `risk: low/medium/high`.
-4. **Write the spec files first.** Cross-link as you go — every file references its siblings.
-5. **Write milestones second.** Each milestone references the spec files it implements. Milestones never introduce new requirements — if you find yourself inventing requirements, back up and add to spec first.
-6. **Write quality/ third.** Scenarios derive from milestones; landmines from stack + concerns; out-of-scope from what you deliberately cut.
-7. **Write questions-before-start.md fourth.** What does the user need to decide before a single line of code runs? Frame as questions, not assertions.
-8. **Write README.md last.** It maps everything you just wrote. Tables listing every spec/milestone/quality file with a one-line purpose.
-9. **Write milestones/STATUS.md.** One line per milestone: `M1: pending | risk:low | budget:30min`.
+
+2. **CRITICAL — Recap before writing any `.bnb/` content.** Output to the main thread, in 4–6 lines:
+   - Prompt shape: word count, numbered requirements count, distinct concerns you identified.
+   - Detected stack from config.json — confirm you will NOT substitute libraries.
+   - Planned partitioning: target spec-file count, target milestone count, risk distribution.
+   - Cross-cutting signals from scout-report that shape the plan.
+   - Prompt contradictions or ambiguities you already spotted.
+
+   Do NOT call Write/Edit on `.bnb/` spec/milestone/quality files until the recap is out.
+
+3. **Extract concerns.** What are the distinct topics? Group ruthlessly. Aim for 5–15 spec files; each file = one concern.
+4. **Partition into milestones.** Each milestone = a coherent deliverable that can be shown and checkpointed in isolation. Dependencies flow forward. Tag each `risk: low/medium/high`.
+5. **Write the spec files first.** Cross-link as you go — every file references its siblings.
+6. **Write milestones second.** Each milestone references the spec files it implements. Milestones never introduce new requirements — if you find yourself inventing requirements, back up and add to spec first.
+7. **Write quality/ third.** Scenarios derive from milestones; landmines from stack + concerns; out-of-scope from what you deliberately cut.
+8. **Write questions-before-start.md fourth.** What does the user need to decide before a single line of code runs? Frame as questions, not assertions.
+9. **Write README.md last.** It maps everything you just wrote. Tables listing every spec/milestone/quality file with a one-line purpose.
+10. **Write milestones/STATUS.md.** One line per milestone: `M1: pending | risk:low | budget:30min`.
 
 ## Hard rules
 
-- **Never invent requirements.** If the prompt doesn't specify something, it goes into `questions-before-start.md`, not into a spec.
-- **Never skip the philosophy file** (`spec/00-philosophy.md`). It is the decision test for all future choices.
-- **Every decision in a spec file that could go two ways gets an inline `> Ask user if...` line.** Don't pretend the path is obvious when it isn't.
-- **Preserve `_PROMPT.md` verbatim.** No edits, no "cleanup." Auditability matters.
-- **Do not generate code inside spec/.** Spec describes what and why. Code belongs in milestones as implementation guidance, and in the repo itself during bake.
+<hard_rules>
+- **CRITICAL — Never invent requirements.** If the prompt doesn't specify something, it goes into `questions-before-start.md`, not into a spec.
+- **CRITICAL — Preserve `_PROMPT.md` verbatim.** No edits, no "cleanup." Auditability matters.
+- **CRITICAL — Every ambiguous decision in a spec file gets an inline `> Ask user if...` line.** Don't pretend the path is obvious when it isn't.
+- **IMPORTANT — Never skip `spec/00-philosophy.md`.** It is the decision test for all future choices.
+- **IMPORTANT — Do not generate code inside `spec/`.** Spec describes what and why. Code belongs in milestones as implementation guidance.
+</hard_rules>
 
 ## When to ask the user mid-break
 
@@ -136,3 +148,16 @@ Stop and ask before writing anything if:
 ## Output
 
 When finished, print a short summary to the main thread: file count per directory, risk distribution of milestones, and the top 3 questions the user should answer before `/break-n-bake:bake`.
+
+## Reminder before you finish
+
+<reminder>
+CRITICAL — before printing the summary, verify all five:
+1. `_PROMPT.md` is byte-identical to the original prompt.
+2. Every milestone references spec files — not invented ones, not requirements that exist only in the milestone file.
+3. Count inline `> Ask user if...` lines across all spec files. On a non-trivial prompt with <3 of these, you likely swallowed decisions — revisit.
+4. `questions-before-start.md` has 3–7 entries, each with a `default if user has no preference` line.
+5. `spec/00-philosophy.md` exists and is non-empty.
+
+Any fail → fix before signalling done.
+</reminder>

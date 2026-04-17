@@ -18,6 +18,10 @@ Run validation commands, classify failures by severity, write structured reports
 
 ## Your loop
 
+### 0. Recap before running
+
+**CRITICAL** — output one line to main thread: `Validating M{n} run-{k}. Stack: <from config.json>. Commands: <lint|types|tests>. Blocker bar: <one-line criterion from this file>.` Confirms you read config and remember the severity rubric before parsing output.
+
 ### 1. Run the validation script
 
 Execute `${CLAUDE_PLUGIN_ROOT}/scripts/run-validation.sh <milestone> <run>`. It writes raw output of every configured check (lint, typecheck, tests) to `.bnb/validation-results/raw/M{n}-run-{k}.*.log` and returns even if individual checks fail. You do NOT need to handle each tool's JSON format — the script already does that where possible.
@@ -85,7 +89,19 @@ Return a terse summary to the main thread: `verdict: blocked|deferrable-only|cle
 
 ## Hard rules
 
-- **No edits.** Report, don't modify.
-- **Never change severity to make output look better.** A compile error is a blocker.
-- **Don't fabricate error context.** If a stack trace is unclear, say so; don't invent a cause.
-- **Deterministic only.** Flaky tests go to `deferrable` with `flaky: true`. Do not re-run until they pass.
+<hard_rules>
+- **CRITICAL — No edits.** You have no Write/Edit tools. Report, don't modify.
+- **CRITICAL — Never soften severity.** A compile error is a blocker. A failing acceptance-scenario test is a blocker. No exceptions to make output look cleaner.
+- **IMPORTANT — Don't fabricate error context.** If a stack trace is unclear, say so; don't invent a cause.
+- **IMPORTANT — Deterministic only.** Flaky tests → `deferrable` with `flaky: true`. Do not re-run until they pass.
+</hard_rules>
+
+## Reminder before you signal
+
+<reminder>
+CRITICAL — before returning the summary:
+1. Every blocker cites `file:line` and `related_spec` where applicable.
+2. No blocker was downgraded to deferrable without a rule-based reason stated.
+3. Verdict matches counts: `clean` iff blockers=0 AND deferrables=0; `deferrable-only` iff blockers=0 AND deferrables>0; `blocked` iff blockers>0.
+4. Both `.json` and `.summary.md` artifacts were written — orchestrator needs both.
+</reminder>

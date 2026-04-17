@@ -1,6 +1,6 @@
 {
   "name": "break-n-bake",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Split overwhelming prompts and large refactors into a structured spec (break), then implement milestone-by-milestone with validation and auto-fix (bake).",
   "author": {
     "name": "Michal Broler"

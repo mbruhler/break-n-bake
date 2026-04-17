@@ -21,19 +21,62 @@ Route large-scope requests into the break-n-bake workflow.
 
 ## What to do when activated
 
-1. **Don't implement immediately.** Briefly explain why this task warrants break-n-bake (one short paragraph, name the specific signal: "this touches ~40 files across auth and session handling" or "you've pasted 2800 words with 11 numbered requirements").
+1. **CRITICAL — Activation recap.** Before anything else, output to the user (2–3 lines):
+   - The specific trigger signal **with a number**: word count, numbered-req count, distinct-concerns count, or estimated blast-radius files.
+   - Which activation criterion fired (long prompt / refactor keyword / cross-cutting short prompt / stuck-user signal).
+   - Confirmation: "I will NOT implement; I will suggest `/break-n-bake:break`."
 
-2. **Check initialization.** Look for `.bnb/config.json`. If it doesn't exist, say: "I'll initialize `.bnb/` first — this creates the config and detects your stack." Run `/break-n-bake:init`.
+   Vague reasons ("this is big", "sounds complex") do not count. Cite a number.
 
-3. **Suggest `/break-n-bake:break`.** It spawns a scout, then a planner, producing `spec/`, `milestones/`, `quality/` under `.bnb/`. The user reviews before any code is written.
+2. **Don't implement immediately.** The recap replaces any urge to start coding.
 
-4. **Wait for user confirmation.** Do not invoke `/break-n-bake:break` unilaterally.
+3. **Check initialization.** Look for `.bnb/config.json`. If it doesn't exist, say: "I'll initialize `.bnb/` first — this creates the config and detects your stack." Suggest `/break-n-bake:init`.
 
-## What not to do
+4. **Suggest `/break-n-bake:break`.** It spawns Explorer, then Breaker, producing `spec/`, `milestones/`, `quality/` under `.bnb/`. The user reviews before any code is written.
 
-- Never run `/break-n-bake:bake` without a prior `/break-n-bake:break` producing `milestones/`.
-- Never edit source code during this skill's activation. Route, don't implement.
-- Never auto-approve without the user reviewing `.bnb/` first.
+5. **CRITICAL — Wait for user confirmation.** Do not invoke `/break-n-bake:break` unilaterally. Your message must end with an explicit yes/no question.
+
+## Output format
+
+<output_format name="activation-message">
+Your activation message has exactly these parts, in order:
+
+```
+Signal: <criterion that fired> — <concrete number, e.g., "2800 words, 11 numbered requirements" or "auth middleware referenced by 42 files">
+
+<2–3 sentence paragraph explaining why break-n-bake helps for THIS prompt specifically — not generic praise of the workflow>
+
+Proposed next step:
+  1. /break-n-bake:init (if .bnb/config.json is missing)
+  2. /break-n-bake:break (to produce spec/milestones/quality)
+
+Want me to proceed? (yes/no)
+```
+
+CRITICAL: the message must NOT include implementation suggestions, architectural opinions, or code snippets. Route only.
+IMPORTANT: if the signal number is unknown (cannot estimate blast radius), say so explicitly — do not invent a number to justify activation.
+</output_format>
+
+## Hard rules
+
+<hard_rules>
+- **CRITICAL — Never run `/break-n-bake:bake` without a prior `/break-n-bake:break`** producing `milestones/`.
+- **CRITICAL — Never edit source code during this skill's activation.** Route, don't implement.
+- **CRITICAL — Never invoke `/break-n-bake:break` unilaterally.** Wait for the user's yes/no.
+- **CRITICAL — Never auto-approve** without the user reviewing `.bnb/` first.
+- **IMPORTANT — Never activate for small changes** (single-file fix, isolated feature). Overhead > value.
+- **IMPORTANT — Never activate when already inside a `/break-n-bake:bake` flow.** The user is mid-implementation.
+</hard_rules>
+
+## Reminder before you send the activation message
+
+<reminder>
+CRITICAL — verify all four before sending:
+1. You cited a specific number (words / requirements / files / concerns) — not a vibe.
+2. You did NOT edit source code, and you did NOT invoke `/break-n-bake:break` yourself.
+3. The message ends with an explicit yes/no question — not a plan you already started executing.
+4. If the task is small (single-file, isolated fix), you did NOT activate this skill.
+</reminder>
 
 ## Commands at a glance
 

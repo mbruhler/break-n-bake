@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Michal Broler",
-    "version": "0.2.1"
+    "version": "0.3.0"
   },
   "plugins": [
     {
       "name": "break-n-bake",
       "source": "./",
       "description": "Split overwhelming prompts and large refactors into structured spec (break), then implement milestone-by-milestone with validation and bounded auto-fix (bake).",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "author": {
         "name": "Michal Broler"
       },
