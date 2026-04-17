@@ -9,13 +9,13 @@
   "userConfig": {
     "max_fix_iterations": {
       "title": "Max fix iterations",
-      "type": "number",
+      "type": "string",
       "description": "Maximum fix-agent iterations before hard stop (default: 5, hard stop at 3 no-progress).",
       "sensitive": false
     },
     "break_threshold_files": {
       "title": "Break threshold (files)",
-      "type": "number",
+      "type": "string",
       "description": "Blast-radius file count above which short prompts auto-trigger break mode (default: 15).",
       "sensitive": false
     }
